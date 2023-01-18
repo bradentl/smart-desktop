@@ -10,3 +10,7 @@ We use servo motors to operate the scissor lift, and a camera and Raspberry Pi t
 
 ## Software
 We use Python for the scissor lift servo code, and Python & OpenCV for the facial recognition system.
+
+### Dependencies
+* OpenCV
+* Dlib
