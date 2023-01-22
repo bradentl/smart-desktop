@@ -14,3 +14,4 @@ We use Python for the scissor lift servo code, and Python & OpenCV for the facia
 ### Dependencies
 - OpenCV  
 - PiCamera
+- Dlib
