@@ -1,12 +1,10 @@
-### Changes: 
-    # integrated dlib, which has correlation filter to track objects, and wrote code for tracking once detected instead of redetection
-    # changed to largest face only being detected and tracked, no storing a list of faces + random
-
 import cv2
 import time
+import dlib
+
+from lx16a import *
 from picamera import PiCamera
 from picamera.array import PiRGBArray
-import dlib
 
 # Constants
 width, height = 640, 480
@@ -17,7 +15,12 @@ mov_tol = 50 # Movement tolerance
 camera = PiCamera()
 camera.resolution = (width, height)
 camera.framerate = 32
-rawCapture = PiRGBArray(camera, size=(w,h))
+rawCapture = PiRGBArray(camera, size=(width, height))
+
+# Initializing Servo
+# If doesn't work, try each port in /dev/
+LX16A.initialize('/dev/ttyUSB0')
+servo = LX16A(1)
 
 time.sleep(0.1)
 
@@ -35,7 +38,7 @@ trackingFace = 0
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
     
     unResizedImg = frame.array
-    img = cv2.resize(unResizedImg, (320, 240))
+    img = cv2.resize(unResizedImg, (width, height))
     
     # detect face if not already tracking one
     if trackingFace==0:
@@ -81,6 +84,8 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             ty = int(tracked_position.top())
             tw = int(tracked_position.width())
             th = int(tracked_position.height())
+            
+            # Tracked face bounding box
             cv2.rectangle(img, (tx, ty),
                                         (tx + tw , ty + th),
                                         (255,0,0) ,2)
@@ -98,11 +103,14 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
                     # Determine direction of movement
                     dir = 1 if (ty - past_y >= 0) else -1
                     # TODO: Move servos
-                    pass
+                    servo.move(10 * dir)
         # if tracking quality not sufficient, ignore
         else:
             trackingFace = 0
-
+    
+    # Crosshairs visualization
+    cv2.line(img, (0, height // 2 + y_adj), (width, height // 2 + y_adj), (0, 255, 0), 1)
+    cv2.line(img, (width // 2, 0), (width // 2, height), (0, 255, 0), 1)
     
     # ending code stuff
     cv2.imshow("image", img)
@@ -111,4 +119,4 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     
-capture.release()
+rawCapture.release()
